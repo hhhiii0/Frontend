@@ -177,6 +177,14 @@ onMounted(() => {
 .session-list-card,
 .messages-card {
   height: calc(100vh - 140px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.session-list-card:hover,
+.messages-card:hover {
+  box-shadow: var(--shadow);
 }
 
 :deep(.el-card__body) {
@@ -202,19 +210,21 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.3s;
   border: 1px solid transparent;
+  background-color: var(--card-bg);
 }
 
 .session-item:hover {
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
+  transform: translateX(5px);
 }
 
 .session-item.active {
-  background-color: #e6f7ff;
-  border-color: #409eff;
+  background-color: var(--primary-light);
+  border-color: var(--primary-color);
 }
 
 .session-info {
@@ -228,11 +238,12 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text-primary);
 }
 
 .session-time {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .messages-list {
@@ -243,6 +254,12 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .message-item.user {
@@ -254,7 +271,7 @@ onMounted(() => {
 }
 
 .message-item.user .message-text {
-  background-color: #409eff;
+  background-color: var(--primary-color);
   color: #fff;
 }
 
@@ -268,22 +285,27 @@ onMounted(() => {
 .message-image {
   max-width: 200px;
   max-height: 200px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.message-image:hover {
+  transform: scale(1.02);
 }
 
 .message-text {
   padding: 12px 16px;
-  border-radius: 8px;
-  background-color: #f5f5f5;
+  border-radius: var(--radius);
+  background-color: var(--card-bg);
   word-wrap: break-word;
   white-space: pre-wrap;
+  box-shadow: var(--shadow-sm);
 }
 
 .message-time {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
   padding: 0 4px;
 }
 </style>
-

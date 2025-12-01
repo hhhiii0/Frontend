@@ -161,6 +161,9 @@ const loadMessages = async () => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 :deep(.el-card__body) {
@@ -175,7 +178,12 @@ const loadMessages = async () => {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
+  /* 添加渐变背景效果 */
+  background-image:
+      linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 .empty-state {
@@ -189,6 +197,13 @@ const loadMessages = async () => {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* 添加消息淡入动画 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .message-item.user {
@@ -200,8 +215,9 @@ const loadMessages = async () => {
 }
 
 .message-item.user .message-text {
-  background-color: #409eff;
+  background-color: var(--primary-color);
   color: #fff;
+  border-top-right-radius: 4px;
 }
 
 .message-content {
@@ -213,16 +229,23 @@ const loadMessages = async () => {
 
 .message-text {
   padding: 12px 16px;
-  border-radius: 8px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius);
+  background-color: var(--card-bg);
+  box-shadow: var(--shadow-sm);
   word-wrap: break-word;
   white-space: pre-wrap;
+  border-top-left-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+/* 悬停效果 */
+.message-text:hover {
+  box-shadow: var(--shadow);
 }
 
 .message-time {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
   padding: 0 4px;
 }
 
@@ -230,12 +253,33 @@ const loadMessages = async () => {
   display: flex;
   gap: 12px;
   padding: 20px;
-  background-color: #fff;
-  border-top: 1px solid #e8e8e8;
+  background-color: var(--card-bg);
+  border-top: 1px solid var(--border-color);
 }
 
 .input-container :deep(.el-textarea) {
   flex: 1;
 }
-</style>
 
+/* 美化输入框 */
+.input-container :deep(.el-textarea__inner) {
+  border-radius: var(--radius);
+  border-color: var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.input-container :deep(.el-textarea__inner:focus) {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+/* 美化按钮 */
+.input-container :deep(.el-button) {
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.input-container :deep(.el-button):hover {
+  transform: translateY(-2px);
+}
+</style>

@@ -19,20 +19,28 @@ const routes = [
     component: () => import('@/views/Layout.vue'),
     meta: { requiresAuth: true },
     children: [
+        //新增
+      {
+        path: '/analytics',
+        name: 'Analytics',
+        component: () => import('@/views/Analytics.vue')
+      },
+      // 在children数组中添加
+      {
+        path: '/brain-tumor',
+        name: 'BrainTumorAnalysis',
+        component: () => import('@/views/BrainTumorAnalysis.vue')
+      },
       {
         path: '',
         redirect: '/chat'
       },
       {
         path: '/chat',
-        name: 'TextChat',
-        component: () => import('@/views/TextChat.vue')
+        name: 'Chat',  // 修改名称
+        component: () => import('@/views/Chat.vue')  // 指向新的合并页面
       },
-      {
-        path: '/upload',
-        name: 'UploadChat',
-        component: () => import('@/views/UploadChat.vue')
-      },
+      // 移除图片问答路由
       {
         path: '/history',
         name: 'History',
@@ -55,7 +63,7 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  
+
   if (to.meta.requiresAuth && !userStore.token) {
     next('/login')
   } else if (to.path === '/login' && userStore.token) {
@@ -66,4 +74,3 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
-

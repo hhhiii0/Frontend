@@ -20,3 +20,13 @@ export const uploadAvatar = (file) => {
   })
 }
 
+export const uploadBrainTumorImage = (file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/upload/brain-tumor', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+

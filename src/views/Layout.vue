@@ -7,34 +7,40 @@
           <el-icon><ChatDotRound /></el-icon>
           <span>AI问答</span>
         </div>
-        
+
         <el-menu
-          :default-active="currentRoute"
-          router
-          class="menu"
+            :default-active="currentRoute"
+            router
+            class="menu"
         >
           <el-menu-item index="/chat">
             <el-icon><ChatLineRound /></el-icon>
-            <span>文字问答</span>
+            <span>智能问答</span>  <!-- 修改名称为"智能问答" -->
           </el-menu-item>
-          
-          <el-menu-item index="/upload">
-            <el-icon><Picture /></el-icon>
-            <span>图片问答</span>
+          <!-- 数据分析 -->
+          <el-menu-item index="/analytics">
+            <el-icon><BarChart /></el-icon>
+            <span>数据分析</span>
           </el-menu-item>
-          
+          <!-- 移除图片问答菜单 -->
+
           <el-menu-item index="/history">
             <el-icon><Clock /></el-icon>
             <span>历史记录</span>
           </el-menu-item>
-          
+
+          <el-menu-item index="/brain-tumor">
+            <el-icon><Clock /></el-icon>
+            <span>脑肿瘤分析</span>
+          </el-menu-item>
+
           <el-menu-item index="/profile">
             <el-icon><User /></el-icon>
             <span>个人中心</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
-      
+
       <!-- 主内容区 -->
       <el-container>
         <!-- 顶部栏 -->
@@ -57,7 +63,7 @@
             </el-dropdown>
           </div>
         </el-header>
-        
+
         <!-- 内容区 -->
         <el-main class="main-content">
           <router-view />
@@ -74,6 +80,7 @@ import { ElMessageBox } from 'element-plus'
 import { UserFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
+
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
@@ -82,8 +89,7 @@ const currentRoute = computed(() => route.path)
 
 const pageTitle = computed(() => {
   const titles = {
-    '/chat': '文字问答',
-    '/upload': '图片问答',
+    '/chat': '智能问答',  // 更新标题
     '/history': '历史记录',
     '/profile': '个人中心'
   }
@@ -107,6 +113,7 @@ const handleCommand = (command) => {
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .layout-container {
   height: 100vh;
   overflow: hidden;
@@ -165,4 +172,3 @@ const handleCommand = (command) => {
   overflow-y: auto;
 }
 </style>
-

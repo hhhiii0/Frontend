@@ -7,35 +7,35 @@
           <template #header>
             <span>个人信息</span>
           </template>
-          
+
           <div class="profile-section">
             <div class="avatar-section">
               <el-avatar :size="100" :src="userInfo.avatar || undefined" :icon="UserFilled" />
               <el-upload
-                :show-file-list="false"
-                :before-upload="handleBeforeUpload"
-                :http-request="handleAvatarUpload"
-                accept="image/*"
+                  :show-file-list="false"
+                  :before-upload="handleBeforeUpload"
+                  :http-request="handleAvatarUpload"
+                  accept="image/*"
               >
                 <el-button type="primary" size="small" :icon="Upload">
                   更换头像
                 </el-button>
               </el-upload>
             </div>
-            
+
             <el-form :model="userForm" label-width="80px" style="margin-top: 30px">
               <el-form-item label="用户名">
                 <el-input v-model="userForm.username" />
               </el-form-item>
-              
+
               <el-form-item label="邮箱">
                 <el-input v-model="userForm.email" />
               </el-form-item>
-              
+
               <el-form-item label="注册时间">
                 <el-input :value="formatTime(userInfo.createTime)" disabled />
               </el-form-item>
-              
+
               <el-form-item>
                 <el-button type="primary" @click="handleUpdateProfile" :loading="loading">
                   保存修改
@@ -45,61 +45,30 @@
           </div>
         </el-card>
       </el-col>
-      
+
       <!-- 修改密码卡片 -->
       <el-col :span="12">
         <el-card class="password-card">
           <template #header>
             <span>修改密码</span>
           </template>
-          
+
           <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="100px">
             <el-form-item label="原密码" prop="oldPassword">
               <el-input v-model="passwordForm.oldPassword" type="password" show-password />
             </el-form-item>
-            
+
             <el-form-item label="新密码" prop="newPassword">
               <el-input v-model="passwordForm.newPassword" type="password" show-password />
             </el-form-item>
-            
+
             <el-form-item label="确认密码" prop="confirmPassword">
               <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
             </el-form-item>
-            
+
             <el-form-item>
               <el-button type="primary" @click="handleUpdatePassword" :loading="passwordLoading">
                 修改密码
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
-        
-        <!-- API设置卡片 -->
-        <el-card class="settings-card" style="margin-top: 20px">
-          <template #header>
-            <span>API设置</span>
-          </template>
-          
-          <el-form :model="settingsForm" label-width="100px">
-            <el-form-item label="API密钥">
-              <el-input
-                v-model="settingsForm.apiKey"
-                type="password"
-                show-password
-                placeholder="通义千问API密钥"
-              />
-            </el-form-item>
-            
-            <el-form-item label="模型名称">
-              <el-select v-model="settingsForm.modelName" style="width: 100%">
-                <el-option label="qwen-vl-plus" value="qwen-vl-plus" />
-                <el-option label="qwen-vl-max" value="qwen-vl-max" />
-              </el-select>
-            </el-form-item>
-            
-            <el-form-item>
-              <el-button type="primary" @click="handleUpdateSettings" :loading="settingsLoading">
-                保存设置
               </el-button>
             </el-form-item>
           </el-form>
@@ -121,7 +90,6 @@ const userStore = useUserStore()
 const passwordFormRef = ref(null)
 const loading = ref(false)
 const passwordLoading = ref(false)
-const settingsLoading = ref(false)
 
 const userInfo = ref({})
 const userForm = ref({
@@ -133,11 +101,6 @@ const passwordForm = ref({
   oldPassword: '',
   newPassword: '',
   confirmPassword: ''
-})
-
-const settingsForm = ref({
-  apiKey: '',
-  modelName: 'qwen-vl-plus'
 })
 
 const validateConfirmPassword = (rule, value, callback) => {
@@ -178,16 +141,6 @@ const loadUserInfo = async () => {
   }
 }
 
-const loadSettings = async () => {
-  try {
-    const data = await getSettings()
-    settingsForm.value.apiKey = data.apiKey || ''
-    settingsForm.value.modelName = data.modelName || 'qwen-vl-plus'
-  } catch (error) {
-    console.error('加载设置失败:', error)
-  }
-}
-
 const handleBeforeUpload = (file) => {
   const isImage = file.type.startsWith('image/')
   const isLt2M = file.size / 1024 / 1024 < 2
@@ -207,10 +160,10 @@ const handleAvatarUpload = async ({ file }) => {
   try {
     const result = await uploadAvatar(file)
     await updateAvatarApi(result.url)
-    
+
     userInfo.value.avatar = result.url
     userStore.setUserInfo(userInfo.value)
-    
+
     ElMessage.success('头像更新成功')
   } catch (error) {
     ElMessage.error('头像更新失败')
@@ -220,12 +173,12 @@ const handleAvatarUpload = async ({ file }) => {
 
 const handleUpdateProfile = async () => {
   loading.value = true
-  
+
   try {
     const data = await updateProfile(userForm.value)
     userInfo.value = data
     userStore.setUserInfo(data)
-    
+
     ElMessage.success('信息更新成功')
   } catch (error) {
     ElMessage.error('信息更新失败')
@@ -239,14 +192,14 @@ const handleUpdatePassword = async () => {
   try {
     await passwordFormRef.value.validate()
     passwordLoading.value = true
-    
+
     await updatePassword({
       oldPassword: passwordForm.value.oldPassword,
       newPassword: passwordForm.value.newPassword
     })
-    
+
     ElMessage.success('密码修改成功')
-    
+
     // 清空表单
     passwordForm.value = {
       oldPassword: '',
@@ -263,23 +216,8 @@ const handleUpdatePassword = async () => {
   }
 }
 
-const handleUpdateSettings = async () => {
-  settingsLoading.value = true
-  
-  try {
-    await updateSettings(settingsForm.value)
-    ElMessage.success('设置保存成功')
-  } catch (error) {
-    ElMessage.error('设置保存失败')
-    console.error('保存失败:', error)
-  } finally {
-    settingsLoading.value = false
-  }
-}
-
 onMounted(() => {
   loadUserInfo()
-  loadSettings()
 })
 </script>
 
@@ -300,9 +238,8 @@ onMounted(() => {
 }
 
 .info-card,
-.password-card,
-.settings-card {
+.password-card {
   margin-bottom: 20px;
+  height: 100%; /* 让卡片高度适应内容 */
 }
 </style>
-
