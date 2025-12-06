@@ -4,7 +4,7 @@
       <!-- 消息列表 -->
       <div class="messages-container" ref="messagesContainer">
         <div v-if="messages.length === 0" class="empty-state">
-          <el-empty :description="isTextMode ? '开始你的AI对话吧' : '上传图片并提问'" />
+          <el-empty description="可上传图片直接分析，或输入消息咨询" />
         </div>
 
         <div
@@ -26,7 +26,7 @@
                 class="message-image"
                 :preview-src-list="[msg.imageUrl]"
             />
-            <div class="message-text">{{ msg.content }}</div>
+            <div class="message-text">{{ msg.content || '[上传了图片]' }}</div>
             <div class="message-time">{{ formatTime(msg.createTime) }}</div>
           </div>
         </div>
@@ -38,59 +38,68 @@
             </el-avatar>
           </div>
           <div class="message-content">
-            <div class="message-text">{{ isTextMode ? '正在思考中...' : '正在分析图片...' }}</div>
+            <div class="message-text">
+              {{ uploadedImageUrl ? '正在分析图片...' : '正在思考中...' }}
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 输入区域 -->
       <div class="input-container">
-        <!-- 模式切换 -->
-        <div class="mode-switch">
-          <el-radio-group v-model="isTextMode" @change="resetInput">
-            <el-radio :label="true">文字问答</el-radio>
-            <el-radio :label="false">图片问答</el-radio>
-          </el-radio-group>
+        <!-- 优化后的图片预览区域 -->
+        <div v-if="previewUrl" class="image-preview-box">
+          <div class="preview-wrapper">
+            <el-image
+                :src="previewUrl"
+                fit="contain"
+                class="preview-image"
+                :preview-src-list="[previewUrl]"
+            />
+            <el-button
+                type="danger"
+                :icon="Close"
+                circle
+                size="small"
+                class="remove-btn"
+                @click="removeImage"
+                hover-class="el-button--danger-hover"
+            />
+          </div>
+          <div class="preview-tip">已上传图片，可直接发送</div>
         </div>
 
-        <!-- 图片预览（仅图片模式显示） -->
-        <div v-if="!isTextMode && previewUrl" class="image-preview-box">
-          <el-image :src="previewUrl" fit="contain" class="preview-image" />
-          <el-button
-              type="danger"
-              :icon="Close"
-              circle
-              size="small"
-              class="remove-btn"
-              @click="removeImage"
-          />
-        </div>
-
-        <!-- 输入框和按钮 -->
+        <!-- 输入框和按钮（图片上传图标在右侧） -->
         <div class="input-row">
-          <!-- 图片上传按钮（仅图片模式显示） -->
+          <!-- 修复：el-input添加自闭合标签 -->
+          <el-input
+              v-model="inputMessage"
+              type="textarea"
+              :rows="3"
+              placeholder="输入消息（可仅上传图片直接发送），按Ctrl+Enter发送"
+              @keydown.ctrl.enter="handleSend"
+              :disabled="loading"
+              class="chat-input"
+          />
+
+          <!-- 图片上传图标按钮 -->
           <el-upload
-              v-if="!isTextMode"
               :show-file-list="false"
               :before-upload="handleBeforeUpload"
               :http-request="handleUpload"
               accept="image/*"
               :disabled="loading"
           >
-            <el-button :icon="Picture" :disabled="loading">
-              {{ previewUrl ? '更换图片' : '上传图片' }}
-            </el-button>
+            <el-button
+                :icon="Picture"
+                :disabled="loading"
+                circle
+                size="small"
+                type="default"
+                title="上传图片（可直接发送）"
+                class="upload-btn"
+            />
           </el-upload>
-
-          <el-input
-              v-model="inputMessage"
-              :type="isTextMode ? 'textarea' : 'text'"
-              :rows="isTextMode ? 3 : 1"
-              :placeholder="isTextMode ? '输入消息，按Ctrl+Enter发送' : '描述你想问的问题...'"
-              @keydown.ctrl.enter="handleSend"
-              @keyup.enter="!isTextMode && handleSend"
-              :disabled="loading"
-          />
 
           <el-button
               type="primary"
@@ -98,6 +107,7 @@
               @click="handleSend"
               :loading="loading"
               :disabled="!canSend"
+              class="send-btn"
           >
             发送
           </el-button>
@@ -120,18 +130,15 @@ const inputMessage = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
 const currentSessionId = ref(null)
-const isTextMode = ref(true) // true: 文字模式, false: 图片模式
 const previewUrl = ref('')
 const uploadedImageUrl = ref('')
 
-// 计算属性：判断是否可以发送消息
+// 脑肿瘤专家系统提示词
+const systemPrompt = "你是一名专业的脑肿瘤分析专家，擅长解答各类脑肿瘤相关问题，包括文字咨询和影像资料（如MRI、CT等）分析。对于文字问题，可解答肿瘤类型、治疗方案、预后等；对于图片问题，可分析肿瘤位置、影像特征等。回答需专业准确，仅限领域内内容，明确说明仅作科普参考，不替代医疗诊断。"
+
+// 计算属性：文字/图片至少有一个即可发送
 const canSend = computed(() => {
-  const hasMessage = inputMessage.value.trim() !== ''
-  if (isTextMode.value) {
-    return hasMessage
-  } else {
-    return hasMessage && uploadedImageUrl.value
-  }
+  return inputMessage.value.trim() !== '' || uploadedImageUrl.value
 })
 
 // 滚动到底部
@@ -152,13 +159,6 @@ const formatTime = (time) => {
     hour: '2-digit',
     minute: '2-digit'
   })
-}
-
-// 切换模式时重置输入
-const resetInput = () => {
-  inputMessage.value = ''
-  previewUrl.value = ''
-  uploadedImageUrl.value = ''
 }
 
 // 图片上传前校验
@@ -182,14 +182,10 @@ const handleUpload = async ({ file }) => {
   loading.value = true
 
   try {
-    // 上传图片
     const result = await uploadImage(file)
     uploadedImageUrl.value = result.url
-
-    // 创建预览URL
     previewUrl.value = URL.createObjectURL(file)
-
-    ElMessage.success('图片上传成功')
+    ElMessage.success('图片上传成功，可直接发送')
   } catch (error) {
     ElMessage.error('图片上传失败')
     console.error('上传失败:', error)
@@ -207,46 +203,45 @@ const removeImage = () => {
 // 发送消息
 const handleSend = async () => {
   if (!canSend.value || loading.value) {
-    if (!isTextMode.value && !uploadedImageUrl.value) {
-      ElMessage.warning('请先上传图片')
-    }
+    ElMessage.warning('请输入消息或上传图片')
     return
   }
 
-  const message = inputMessage.value.trim()
+  let message = inputMessage.value.trim()
+  // 仅传图片时，给message设置默认值（避免后端校验为空）
+  if (!message && uploadedImageUrl.value) {
+    message = "[图片咨询]"
+  }
   inputMessage.value = ''
 
-  // 准备发送的数据
+  // 准备发送的数据（文字/图片可选其一）
   const sendData = {
     sessionId: currentSessionId.value,
-    message: message
+    message: message,
+    systemPrompt: systemPrompt
   }
 
-  // 如果是图片模式，添加图片URL
-  if (!isTextMode.value) {
+  // 若有上传的图片，携带图片URL
+  if (uploadedImageUrl.value) {
     sendData.imageUrl = uploadedImageUrl.value
   }
 
-  // 添加用户消息到界面
+  // 添加用户消息到界面（无文字时显示“[上传了图片]”）
   const userMessage = {
     id: Date.now(),
     role: 'user',
-    content: message,
+    content: message === "[图片咨询]" ? "" : message,  // 前端显示时隐藏默认值
     createTime: new Date().toISOString()
   }
-
-  // 如果是图片模式，添加图片URL
-  if (!isTextMode.value) {
+  // 携带图片（若有）
+  if (uploadedImageUrl.value) {
     userMessage.imageUrl = uploadedImageUrl.value
   }
 
   messages.value.push(userMessage)
-
-  // 图片模式下清空图片
-  if (!isTextMode.value) {
-    previewUrl.value = ''
-    uploadedImageUrl.value = ''
-  }
+  // 清空已上传的图片（避免重复发送）
+  previewUrl.value = ''
+  uploadedImageUrl.value = ''
 
   scrollToBottom()
   loading.value = true
@@ -303,6 +298,8 @@ const loadMessages = async () => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 :deep(.el-card__body) {
@@ -311,6 +308,7 @@ const loadMessages = async () => {
   flex-direction: column;
   overflow: hidden;
   padding: 0;
+  border-radius: 12px;
 }
 
 .messages-container {
@@ -358,6 +356,7 @@ const loadMessages = async () => {
   max-height: 300px;
   border-radius: 8px;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .message-text {
@@ -379,38 +378,112 @@ const loadMessages = async () => {
   padding: 20px;
   background-color: #fff;
   border-top: 1px solid #e8e8e8;
+  border-radius: 0 0 12px 12px;
 }
 
-.mode-switch {
-  margin-bottom: 15px;
-}
-
+/* 优化后的图片预览区域样式 */
 .image-preview-box {
+  margin-bottom: 16px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e8e8e8;
+}
+
+.preview-wrapper {
   position: relative;
-  margin-bottom: 12px;
   display: inline-block;
+  margin-bottom: 8px;
 }
 
 .preview-image {
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   border-radius: 8px;
   border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.preview-image:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .remove-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: -10px;
+  right: -10px;
+  background-color: #f56c6c;
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3);
+  transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+  background-color: #f78989;
+  transform: scale(1.05);
+}
+
+.preview-tip {
+  font-size: 12px;
+  color: #666;
+  margin-left: 4px;
 }
 
 .input-row {
   display: flex;
-  gap: 12px;
-  align-items: center;
+  gap: 10px;
+  align-items: center; /* 垂直居中对齐元素 */
 }
 
-.input-row :deep(.el-input) {
-  flex: 1;
+.chat-input {
+  flex: 1; /* 输入框占满剩余宽度 */
+  border-radius: 8px;
+}
+
+/* 按钮样式优化 */
+.upload-btn {
+  flex-shrink: 0; /* 防止按钮被压缩 */
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.upload-btn:hover {
+  background-color: #f5f7fa;
+  color: #409eff;
+}
+
+.send-btn {
+  flex-shrink: 0;
+  border-radius: 8px;
+  padding: 0 20px;
+  height: 40px;
+}
+
+/* 适配element-plus的样式穿透 */
+:deep(.el-textarea__inner) {
+  border-radius: 8px;
+  resize: none;
+  padding: 12px;
+}
+
+:deep(.el-button--primary) {
+  background-color: #409eff;
+  border-color: #409eff;
+}
+
+:deep(.el-button--primary:hover) {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
 }
 </style>

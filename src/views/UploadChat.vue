@@ -6,11 +6,11 @@
         <div v-if="messages.length === 0" class="empty-state">
           <el-empty description="上传图片并提问" />
         </div>
-        
+
         <div
-          v-for="msg in messages"
-          :key="msg.id"
-          :class="['message-item', msg.role]"
+            v-for="msg in messages"
+            :key="msg.id"
+            :class="['message-item', msg.role]"
         >
           <div class="message-avatar">
             <el-avatar v-if="msg.role === 'user'" :icon="UserFilled" />
@@ -20,17 +20,17 @@
           </div>
           <div class="message-content">
             <el-image
-              v-if="msg.imageUrl"
-              :src="msg.imageUrl"
-              fit="cover"
-              class="message-image"
-              :preview-src-list="[msg.imageUrl]"
+                v-if="msg.imageUrl"
+                :src="msg.imageUrl"
+                fit="cover"
+                class="message-image"
+                :preview-src-list="[msg.imageUrl]"
             />
             <div class="message-text">{{ msg.content }}</div>
             <div class="message-time">{{ formatTime(msg.createTime) }}</div>
           </div>
         </div>
-        
+
         <div v-if="loading" class="message-item assistant">
           <div class="message-avatar">
             <el-avatar>
@@ -42,49 +42,49 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 输入区域 -->
       <div class="input-container">
         <!-- 图片预览 -->
         <div v-if="previewUrl" class="image-preview-box">
           <el-image :src="previewUrl" fit="contain" class="preview-image" />
           <el-button
-            type="danger"
-            :icon="Close"
-            circle
-            size="small"
-            class="remove-btn"
-            @click="removeImage"
+              type="danger"
+              :icon="Close"
+              circle
+              size="small"
+              class="remove-btn"
+              @click="removeImage"
           />
         </div>
-        
+
         <!-- 输入框和按钮 -->
         <div class="input-row">
           <el-upload
-            :show-file-list="false"
-            :before-upload="handleBeforeUpload"
-            :http-request="handleUpload"
-            accept="image/*"
-            :disabled="loading"
+              :show-file-list="false"
+              :before-upload="handleBeforeUpload"
+              :http-request="handleUpload"
+              accept="image/*"
+              :disabled="loading"
           >
             <el-button :icon="Picture" :disabled="loading">
               {{ previewUrl ? '更换图片' : '上传图片' }}
             </el-button>
           </el-upload>
-          
+
           <el-input
-            v-model="inputMessage"
-            placeholder="描述你想问的问题..."
-            :disabled="loading"
-            @keyup.enter="handleSend"
+              v-model="inputMessage"
+              placeholder="描述你想问的问题..."
+              :disabled="loading"
+              @keyup.enter="handleSend"
           />
-          
+
           <el-button
-            type="primary"
-            :icon="Promotion"
-            @click="handleSend"
-            :loading="loading"
-            :disabled="!inputMessage.trim() || !uploadedImageUrl"
+              type="primary"
+              :icon="Promotion"
+              @click="handleSend"
+              :loading="loading"
+              :disabled="!inputMessage.trim() || !uploadedImageUrl"
           >
             发送
           </el-button>
@@ -97,7 +97,7 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { UserFilled, Promotion, Picture, Close } from '@element-plus/icons-vue'
+import { UserFilled, Promotion, Picture, Close, ChatDotRound } from '@element-plus/icons-vue'
 import { sendMessage } from '@/api/chat'
 import { uploadImage } from '@/api/upload'
 
@@ -108,6 +108,9 @@ const messagesContainer = ref(null)
 const currentSessionId = ref(null)
 const previewUrl = ref('')
 const uploadedImageUrl = ref('')
+
+// 脑肿瘤专家系统提示词（新增）
+const systemPrompt = "你是一名专业的脑肿瘤分析专家，尤其擅长通过影像资料（如MRI、CT等）分析脑肿瘤特征。请专注于解答与脑肿瘤相关的图片分析问题，包括肿瘤位置、可能类型、影像特征等。回答需专业准确，避免超出领域范围，明确说明仅作科普参考，不替代专业医疗诊断。"
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -144,15 +147,11 @@ const handleBeforeUpload = (file) => {
 
 const handleUpload = async ({ file }) => {
   loading.value = true
-  
+
   try {
-    // 上传图片
     const result = await uploadImage(file)
     uploadedImageUrl.value = result.url
-    
-    // 创建预览URL
     previewUrl.value = URL.createObjectURL(file)
-    
     ElMessage.success('图片上传成功')
   } catch (error) {
     ElMessage.error('图片上传失败')
@@ -172,12 +171,12 @@ const handleSend = async () => {
     ElMessage.warning('请先上传图片并输入问题')
     return
   }
-  
+
   const message = inputMessage.value.trim()
   const imageUrl = uploadedImageUrl.value
-  
+
   inputMessage.value = ''
-  
+
   // 添加用户消息到界面
   messages.value.push({
     id: Date.now(),
@@ -186,26 +185,28 @@ const handleSend = async () => {
     imageUrl: imageUrl,
     createTime: new Date().toISOString()
   })
-  
+
   // 清空图片
   previewUrl.value = ''
   uploadedImageUrl.value = ''
-  
+
   scrollToBottom()
   loading.value = true
-  
+
   try {
+    // 发送消息时携带系统提示词（修改处）
     const response = await sendMessage({
       sessionId: currentSessionId.value,
       message: message,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      systemPrompt: systemPrompt
     })
-    
+
     // 更新会话ID
     if (!currentSessionId.value) {
       currentSessionId.value = response.sessionId
     }
-    
+
     // 添加AI回复到界面
     messages.value.push(response)
     scrollToBottom()
@@ -219,6 +220,7 @@ const handleSend = async () => {
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .upload-chat-container {
   height: 100%;
   padding: 20px;
@@ -335,4 +337,3 @@ const handleSend = async () => {
   flex: 1;
 }
 </style>
-

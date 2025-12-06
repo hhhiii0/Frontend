@@ -6,11 +6,11 @@
         <div v-if="messages.length === 0" class="empty-state">
           <el-empty description="开始你的AI对话吧" />
         </div>
-        
+
         <div
-          v-for="msg in messages"
-          :key="msg.id"
-          :class="['message-item', msg.role]"
+            v-for="msg in messages"
+            :key="msg.id"
+            :class="['message-item', msg.role]"
         >
           <div class="message-avatar">
             <el-avatar v-if="msg.role === 'user'" :icon="UserFilled" />
@@ -23,7 +23,7 @@
             <div class="message-time">{{ formatTime(msg.createTime) }}</div>
           </div>
         </div>
-        
+
         <div v-if="loading" class="message-item assistant">
           <div class="message-avatar">
             <el-avatar>
@@ -35,23 +35,23 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 输入框 -->
       <div class="input-container">
         <el-input
-          v-model="inputMessage"
-          type="textarea"
-          :rows="3"
-          placeholder="输入消息，按Ctrl+Enter发送"
-          @keydown.ctrl.enter="handleSend"
-          :disabled="loading"
+            v-model="inputMessage"
+            type="textarea"
+            :rows="3"
+            placeholder="输入消息，按Ctrl+Enter发送"
+            @keydown.ctrl.enter="handleSend"
+            :disabled="loading"
         />
         <el-button
-          type="primary"
-          :icon="Promotion"
-          @click="handleSend"
-          :loading="loading"
-          :disabled="!inputMessage.trim()"
+            type="primary"
+            :icon="Promotion"
+            @click="handleSend"
+            :loading="loading"
+            :disabled="!inputMessage.trim()"
         >
           发送
         </el-button>
@@ -63,7 +63,7 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { UserFilled, Promotion } from '@element-plus/icons-vue'
+import { UserFilled, Promotion, ChatDotRound } from '@element-plus/icons-vue'
 import { sendMessage, getMessages } from '@/api/chat'
 
 const messages = ref([])
@@ -71,6 +71,9 @@ const inputMessage = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
 const currentSessionId = ref(null)
+
+// 脑肿瘤专家系统提示词（新增）
+const systemPrompt = "你是一名专业的脑肿瘤分析专家，拥有丰富的神经肿瘤学临床经验。请专注于解答脑肿瘤相关的医学问题，包括但不限于肿瘤类型（如胶质瘤、脑膜瘤等）、诊断方法（影像分析、病理检测等）、治疗方案（手术、放疗、化疗等）、预后评估及最新研究进展。回答需专业准确，避免超出领域范围，对于不确定的内容需明确说明，不提供医疗诊断建议（仅作科普参考）。"
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -92,10 +95,10 @@ const formatTime = (time) => {
 
 const handleSend = async () => {
   if (!inputMessage.value.trim() || loading.value) return
-  
+
   const message = inputMessage.value.trim()
   inputMessage.value = ''
-  
+
   // 添加用户消息到界面
   messages.value.push({
     id: Date.now(),
@@ -103,21 +106,23 @@ const handleSend = async () => {
     content: message,
     createTime: new Date().toISOString()
   })
-  
+
   scrollToBottom()
   loading.value = true
-  
+
   try {
+    // 发送消息时携带系统提示词（修改处）
     const response = await sendMessage({
       sessionId: currentSessionId.value,
-      message: message
+      message: message,
+      systemPrompt: systemPrompt
     })
-    
+
     // 更新会话ID
     if (!currentSessionId.value) {
       currentSessionId.value = response.sessionId
     }
-    
+
     // 添加AI回复到界面
     messages.value.push(response)
     scrollToBottom()
@@ -130,7 +135,6 @@ const handleSend = async () => {
 }
 
 onMounted(() => {
-  // 可以从路由参数加载历史会话
   const sessionId = new URLSearchParams(window.location.search).get('sessionId')
   if (sessionId) {
     currentSessionId.value = parseInt(sessionId)
@@ -140,7 +144,7 @@ onMounted(() => {
 
 const loadMessages = async () => {
   if (!currentSessionId.value) return
-  
+
   try {
     const data = await getMessages(currentSessionId.value)
     messages.value = data
@@ -152,6 +156,7 @@ const loadMessages = async () => {
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .chat-container {
   height: 100%;
   padding: 20px;
@@ -179,7 +184,6 @@ const loadMessages = async () => {
   overflow-y: auto;
   padding: 20px;
   background-color: var(--bg-color);
-  /* 添加渐变背景效果 */
   background-image:
       linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px);
@@ -200,7 +204,6 @@ const loadMessages = async () => {
   animation: fadeIn 0.3s ease-in-out;
 }
 
-/* 添加消息淡入动画 */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -238,7 +241,6 @@ const loadMessages = async () => {
   transition: all 0.2s ease;
 }
 
-/* 悬停效果 */
 .message-text:hover {
   box-shadow: var(--shadow);
 }
@@ -261,7 +263,6 @@ const loadMessages = async () => {
   flex: 1;
 }
 
-/* 美化输入框 */
 .input-container :deep(.el-textarea__inner) {
   border-radius: var(--radius);
   border-color: var(--border-color);
@@ -273,7 +274,6 @@ const loadMessages = async () => {
   box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }
 
-/* 美化按钮 */
 .input-container :deep(.el-button) {
   border-radius: var(--radius);
   transition: all 0.2s ease;
